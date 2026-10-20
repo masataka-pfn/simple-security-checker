@@ -1,0 +1,71 @@
+# ssc の設定ファイルのサンプル。/etc/ssc/config.yaml にコピーして編集する。
+# 書いていない項目は config/defaults.yaml の既定値が使われる (ssc config dump で最終的な値を確認できる)。
+
+mail:
+  to: [admin@example.com]
+  # from: ssc@example.com
+  # cron (root) から msmtp を ~/.msmtprc の持ち主として実行する
+  run_as: ubuntu
+  # 週次サマリーを送る曜日 (1=月曜 ... 7=日曜)
+  weekly_day: 1
+
+# ジョブ = 「どのチェックを、いつ、どの通知方式で実行するか」。
+#   check    : security_updates / attack_surface / web_services / ioc / external
+#   schedule : "HH:MM" (毎日) か cron 形式 ("*/5 * * * *")。ssc install-cron で /etc/cron.d/ssc に反映する
+#   notify   : calendar (問題があれば即日、なければ週次) / change (状態が変わったときだけ) / always (毎回)
+#   title    : 件名に使う名前 (省略可)
+#   enabled  : false にすると cron に登録しない
+jobs:
+  security:
+    check: security_updates
+    schedule: "03:00"
+    notify: calendar
+  attack-surface:
+    check: attack_surface
+    schedule: "03:15"
+    notify: calendar
+  ioc:
+    check: ioc
+    schedule: "03:30"
+    notify: calendar
+  # Web 監視は 2 本立て: 5 分おきに状態の変化だけを通知し、毎朝 1 回は必ず送って監視自体の生存を知らせる
+  web-watch:
+    check: web_services
+    schedule: "*/5 * * * *"
+    notify: change
+  web-daily:
+    check: web_services
+    schedule: "05:30"
+    notify: always
+    title: Webサービス 定期報告
+  # 別のスクリプトの結果を送る例。出力 (または log に書かれた今回分) に
+  # 「要対応項目: N」か行頭の「問題なし」が必要 (書式が違うなら ok_pattern / issues_pattern で指定)
+  # my-check:
+  #   check: external
+  #   command: /usr/local/bin/my_check.sh --quiet
+  #   log: /var/log/my_check/%Y%m%d.log    # date の書式。省略時は標準出力を使う
+  #   schedule: "04:00"
+  #   notify: calendar
+
+checks:
+  attack_surface:
+    allowed_tcp_ports: [22, 80, 443]
+    # 実際に狙われたパスを見つけたら、ここに追加していく
+    extra_sensitive_paths: []
+
+  web_services:
+    public_urls:
+      - {label: app, url: "https://example.com/app/"}
+    backends:
+      - {label: app (Next.js), url: "http://127.0.0.1:3000/"}
+      - {label: api (uvicorn), url: "http://127.0.0.1:8000/docs"}
+    ok_codes: [2xx, 3xx, 401, 403]
+    # elasticsearch_url: http://127.0.0.1:9200
+    systemd_services: [nginx.service]
+    # timers:
+    #   - {timer: crawl.timer, service: crawl.service}
+    # docker_compose_projects: [myapp]
+    # docker_on_demand_patterns: ["*crawler*"]
+
+  ioc:
+    files: [/etc/ssc/ioc.d/*.txt]

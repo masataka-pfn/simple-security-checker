@@ -1,0 +1,95 @@
+# ssc の既定値。/etc/ssc/config.yaml で上書きする (mapping はキー単位でマージ、list は丸ごと置き換え)。
+# このファイルは直接編集しないでください。
+
+state_dir: /var/lib/ssc
+
+mail:
+  to: []
+  from: ""
+  # msmtp は ~/.msmtprc の持ち主と実行ユーザーが一致しないと拒否する。
+  # cron (root) から送るときは、このユーザーとして msmtp を実行する。空なら実行ユーザーのまま送る。
+  run_as: ""
+  # 件名の先頭に付ける名前。空ならホスト名 (hostname -f)。
+  host_label: ""
+  # notify: calendar のジョブが「問題なし」でも週次サマリーを送る曜日 (1=月曜 ... 7=日曜)
+  weekly_day: 1
+
+jobs: {}
+
+checks:
+  security_updates:
+    # 先に apt-get update を実行する (root のとき)
+    update_lists: true
+    epss_threshold: 0.04
+    kev_url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    kev_cache_ttl_hours: 24
+    # changelog の最新エントリに "SECURITY REGRESSION" がないか調べるパッケージ (libssl* は自動で追加)
+    regression_packages: [nginx, apache2, openssl, openssh-server, openssh-client, curl, libcurl4t64, bind9, postfix, dovecot-core]
+    failed_login_threshold: 20
+    cert_warn_days: 30
+    cert_crit_days: 7
+    disk_warn_pct: 80
+    disk_crit_pct: 90
+
+  attack_surface:
+    # 127.0.0.1 / ::1 以外で待ち受けてよいポート
+    allowed_tcp_ports: [22, 80, 443]
+    allowed_udp_ports: []
+    # nginx 経由で外から読めてはいけないパス
+    sensitive_paths:
+      - /.env
+      - /.env.local
+      - /.env.production
+      - /.env.bak
+      - /.env.save
+      - /.git/config
+      - /.git/HEAD
+      - /.svn/entries
+      - /.htpasswd
+      - /wp-config.php.bak
+      - /config.php.bak
+      - /backup.zip
+      - /backup.tar.gz
+      - /backup.sql
+      - /db.sql
+      - /dump.sql
+      - /docker-compose.yml
+      - /.aws/credentials
+      - /id_rsa
+      - /.claude/settings.json
+      - /.claude/settings.local.json
+      - /.claude/CLAUDE.md
+      - /CLAUDE.md
+      - /.mcp.json
+    # sensitive_paths を丸ごと書き直さずに追加したいとき
+    extra_sensitive_paths: []
+    url_check: true
+    user_agent: attack-surface-self-check
+    nginx_conf_globs: [/etc/nginx/sites-enabled/*, /etc/nginx/conf.d/*.conf]
+
+  web_services:
+    # 公開 URL と 127.0.0.1 上のバックエンド。ok_codes に入らない応答は、5xx と接続不可なら要対応、それ以外は要確認
+    public_urls: []        # - {label: app, url: https://example.com/app/}
+    backends: []           # - {label: api, url: http://127.0.0.1:8000/health}
+    ok_codes: [2xx, 3xx, 401, 403]
+    # Elasticsearch の _cluster/health。空なら確認しない
+    elasticsearch_url: ""
+    systemd_services: []   # - nginx.service
+    # 定期実行の timer と、その前回結果を見る service
+    timers: []             # - {timer: crawl.timer, service: crawl.service}
+    docker_compose_projects: []
+    # 必要なときだけ動かすコンテナ名のパターン (Exited (0) を正常とみなす)
+    docker_on_demand_patterns: []
+
+  ioc:
+    # IOC の一覧ファイル (glob 可)。書式は examples/ioc/README.md を参照
+    files: [/etc/ssc/ioc.d/*.txt]
+    logs:
+      - /var/log/nginx/access.log*
+      - /var/log/nginx/error.log*
+      - /var/log/auth.log*
+      - /var/log/syslog*
+      - /var/log/ufw.log*
+      - /var/log/kern.log*
+    # 現在の接続 (ss) も照合する
+    check_connections: true

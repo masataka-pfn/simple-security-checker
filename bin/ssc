@@ -1,0 +1,130 @@
+#!/bin/bash
+# ssc (simple-security-checker) — Ubuntu サーバーのセキュリティ点検とメール通知
+set -uo pipefail
+
+SSC_HOME="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export SSC_HOME
+source "${SSC_HOME}/lib/common.sh"
+source "${SSC_HOME}/lib/report.sh"
+
+CHECK_NAMES=(security_updates attack_surface web_services ioc)
+CRON_FILE=/etc/cron.d/ssc
+
+usage() {
+    cat <<EOF
+使い方: ssc [-c CONFIG] <コマンド> [引数]
+
+  check <チェック名> [--quiet] [...]   チェックを実行して結果を表示する (メールは送らない)
+                                       チェック名: ${CHECK_NAMES[*]}
+  run <ジョブ名> [--force] [--dry-run]  設定のジョブを実行し、通知方式に従ってメールを送る
+                                       --force   : 送信条件に関係なく送る
+                                       --dry-run : 送らずにメールの内容を表示する
+  list                                 設定されたジョブの一覧
+  init-baseline                        攻撃点チェックの基準を、現在の状態で作成・更新する (root)
+  install-cron [--print]               ジョブの schedule から ${CRON_FILE} を生成する (root)
+  config validate|dump                 設定を検査する / 既定値をマージした最終的な設定を表示する
+
+設定ファイル: \${SSC_CONFIG:-/etc/ssc/config.yaml} (-c で指定も可)
+EOF
+}
+
+# "HH:MM" を cron の形式に変換する (それ以外はそのまま返す)
+to_cron() {
+    if [[ "$1" =~ ^([0-9]{1,2}):([0-9]{2})$ ]]; then
+        echo "$((10#${BASH_REMATCH[2]})) $((10#${BASH_REMATCH[1]})) * * *"
+    else
+        echo "$1"
+    fi
+}
+
+job_var() {
+    local v="CFG_jobs_${1//[^A-Za-z0-9_]/_}_$2"
+    echo "${!v:-${3:-}}"
+}
+
+cmd_list() {
+    load_config
+    printf '%-24s %-18s %-10s %-8s %s\n' JOB CHECK NOTIFY ENABLED SCHEDULE
+    local name
+    for name in "${CFG_jobs__keys[@]+"${CFG_jobs__keys[@]}"}"; do
+        printf '%-24s %-18s %-10s %-8s %s\n' "$name" "$(job_var "$name" check)" \
+            "$(job_var "$name" notify calendar)" "$(job_var "$name" enabled 1)" \
+            "$(to_cron "$(job_var "$name" schedule '(なし)')")"
+    done
+}
+
+cmd_install_cron() {
+    python3 "${SSC_HOME}/lib/config.py" validate ${SSC_CONFIG:+-c "$SSC_CONFIG"} >/dev/null || {
+        python3 "${SSC_HOME}/lib/config.py" validate ${SSC_CONFIG:+-c "$SSC_CONFIG"}
+        exit 1
+    }
+    load_config
+    local print_only=0
+    [[ "${1:-}" == --print ]] && print_only=1
+    local self config_opt="" out name sched
+    self="$(readlink -f "$0")"
+    [[ -n "${SSC_CONFIG:-}" ]] && config_opt=" -c $(readlink -f "$SSC_CONFIG")"
+    out="# ssc install-cron が ${CFG__file} から生成。直接編集せず、設定を変えて再生成してください
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+"
+    for name in "${CFG_jobs__keys[@]+"${CFG_jobs__keys[@]}"}"; do
+        sched=$(job_var "$name" schedule)
+        [[ -z "$sched" || "$(job_var "$name" enabled 1)" != 1 ]] && continue
+        out+="$(to_cron "$sched") root ${self}${config_opt} run ${name} 2>&1"$'\n'
+    done
+    if [[ $print_only -eq 1 ]]; then
+        echo "$out"
+        return
+    fi
+    if [[ $EUID -ne 0 ]]; then
+        echo "install-cron は root で実行してください (--print で内容だけ表示できます)" >&2
+        exit 1
+    fi
+    echo "$out" > "$CRON_FILE"
+    chmod 644 "$CRON_FILE"
+    echo "${CRON_FILE} を書き込みました:"
+    echo "$out"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -c|--config) export SSC_CONFIG="$2"; shift 2 ;;
+        -h|--help|help) usage; exit 0 ;;
+        *) break ;;
+    esac
+done
+[[ $# -eq 0 ]] && { usage; exit 1; }
+CMD="$1"; shift
+
+case "$CMD" in
+    check)
+        name="${1:-}"; shift || true
+        if [[ ! " ${CHECK_NAMES[*]} " == *" ${name} "* ]]; then
+            echo "チェック名を指定してください: ${CHECK_NAMES[*]}" >&2
+            exit 1
+        fi
+        exec bash "${SSC_HOME}/checks/${name}.sh" "$@" ;;
+    run)
+        name="${1:-}"; shift || true
+        [[ -z "$name" ]] && { echo "ジョブ名を指定してください (ssc list で一覧)" >&2; exit 1; }
+        force=0; dry_run=0
+        for a in "$@"; do
+            case "$a" in
+                --force|-f) force=1 ;;
+                --dry-run|-n) dry_run=1 ;;
+                *) echo "不明なオプション: $a" >&2; exit 1 ;;
+            esac
+        done
+        load_config
+        run_job "$name" "$force" "$dry_run" ;;
+    list)          cmd_list ;;
+    init-baseline) exec bash "${SSC_HOME}/checks/attack_surface.sh" --init-baseline ;;
+    install-cron)  cmd_install_cron "$@" ;;
+    config)
+        case "${1:-}" in
+            validate|dump) exec python3 "${SSC_HOME}/lib/config.py" "$1" ${SSC_CONFIG:+-c "$SSC_CONFIG"} ;;
+            *) echo "ssc config validate|dump" >&2; exit 1 ;;
+        esac ;;
+    *) usage; exit 1 ;;
+esac

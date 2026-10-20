@@ -1,0 +1,8 @@
+# 実際のサーバーの設定や実行時の状態は、このリポジトリに入れない
+/config.yaml
+*.local.yaml
+.env
+.env.*
+*.pem
+*.key
+__pycache__/

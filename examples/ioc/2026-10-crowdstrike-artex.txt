@@ -1,0 +1,13 @@
+# CrowdStrike: Unknown Threat Actor Uses AI-Driven ARTEX to Target South Korean Finance (2026-10-07)
+# https://www.crowdstrike.com/en-us/blog/unknown-threat-actor-uses-artex-to-target-south-korean-finance/
+38.244.50[.]120      # ARTEX をホストする攻撃者のサーバー
+101.53.80[.]20       # プロキシ
+205.214.59[.]31      # プロキシ
+124.155.252[.]63     # プロキシ
+154.201.79[.]246     # プロキシ
+23.248.249[.]90      # プロキシ
+23.158.220[.]98      # プロキシ
+103.248.148[.]84     # プロキシ
+203.160.133[.]172    # プロキシ
+209.209.85[.]38      # プロキシ
+xcai[.]pro           # DeepSeek への中継サービスとみられる
