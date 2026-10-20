@@ -14,6 +14,7 @@ ssc (simple-security-checker): Bash checks for Ubuntu/Debian servers, run as roo
 - `lib/report.sh` — `run_job`: runs a check, decides whether to mail, sends via msmtp.
 - `checks/*.sh` — one script per check; each sources `lib/common.sh`, calls `load_config`, and must end with `finish`.
 - `lib/ioc_match.py` — single pass over all logs matching every IOC; outputs TSV that `checks/ioc.sh` formats.
+- `site/` — git-ignored folder where an operator keeps their own server's config (real recipients, hostnames, IOC lists, a deploy script). Never commit it, never copy its contents into tracked files, and check `git status` shows nothing under `site/` before committing. If it exists, read `site/CLAUDE.md` for that server's notes.
 
 ## Contracts
 
