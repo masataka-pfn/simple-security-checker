@@ -15,8 +15,9 @@ usage() {
 使い方: ssc [-c CONFIG] <コマンド> [引数]
 
   check <チェック名> [--quiet] [...]   チェックを実行して結果を表示する (メールは送らない)
-                                       チェック名: ${CHECK_NAMES[*]}
+                                       チェック名: ${CHECK_NAMES[*]}、all (すべて)
   run <ジョブ名> [--force] [--dry-run]  設定のジョブを実行し、通知方式に従ってメールを送る
+                                       ジョブ名に all を指定すると、有効なジョブをすべて順に実行する
                                        --force   : 送信条件に関係なく送る
                                        --dry-run : 送らずにメールの内容を表示する
   list                                 設定されたジョブの一覧
@@ -51,6 +52,32 @@ cmd_list() {
             "$(job_var "$name" notify calendar)" "$(job_var "$name" enabled 1)" \
             "$(to_cron "$(job_var "$name" schedule '(なし)')")"
     done
+}
+
+# check all: すべてのチェックを順に実行する (--quiet など共通のオプションだけ渡せる)
+cmd_check_all() {
+    local name rc=0
+    for name in "${CHECK_NAMES[@]}"; do
+        echo -e "\n${BOLD}######## ${name} ########${RESET}"
+        bash "${SSC_HOME}/checks/${name}.sh" "$@" || rc=1
+    done
+    return $rc
+}
+
+# run all: enabled のジョブをすべて順に実行する。1 つが失敗しても残りは続ける
+cmd_run_all() {
+    local force="$1" dry_run="$2" name rc=0 ran=0
+    for name in "${CFG_jobs__keys[@]+"${CFG_jobs__keys[@]}"}"; do
+        if [[ "$(job_var "$name" enabled 1)" != 1 ]]; then
+            echo "######## ${name}: 無効 (enabled: false) のためスキップ"
+            continue
+        fi
+        echo "######## ${name}"
+        run_job "$name" "$force" "$dry_run" || { rc=1; echo "ssc: ジョブ ${name} の送信に失敗しました" >&2; }
+        ran=$((ran + 1))
+    done
+    echo "######## ${ran} 件のジョブを実行しました"
+    return $rc
 }
 
 cmd_install_cron() {
@@ -100,8 +127,12 @@ CMD="$1"; shift
 case "$CMD" in
     check)
         name="${1:-}"; shift || true
+        if [[ "$name" == all ]]; then
+            cmd_check_all "$@"
+            exit $?
+        fi
         if [[ ! " ${CHECK_NAMES[*]} " == *" ${name} "* ]]; then
-            echo "チェック名を指定してください: ${CHECK_NAMES[*]}" >&2
+            echo "チェック名を指定してください: ${CHECK_NAMES[*]} all" >&2
             exit 1
         fi
         exec bash "${SSC_HOME}/checks/${name}.sh" "$@" ;;
@@ -117,7 +148,11 @@ case "$CMD" in
             esac
         done
         load_config
-        run_job "$name" "$force" "$dry_run" ;;
+        if [[ "$name" == all ]]; then
+            cmd_run_all "$force" "$dry_run"
+        else
+            run_job "$name" "$force" "$dry_run"
+        fi ;;
     list)          cmd_list ;;
     init-baseline) exec bash "${SSC_HOME}/checks/attack_surface.sh" --init-baseline ;;
     install-cron)  cmd_install_cron "$@" ;;

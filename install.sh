@@ -35,7 +35,8 @@ ln -sf "$PREFIX/bin/ssc" /usr/local/sbin/ssc
 
 install -d -m 755 /etc/ssc /etc/ssc/ioc.d
 if [[ ! -f /etc/ssc/config.yaml ]]; then
-    install -m 640 "$SRC/config/config.example.yaml" /etc/ssc/config.yaml
+    # 一般ユーザーでもチェックを実行できるよう、誰でも読める権限にする (パスワードなどは書かない前提)
+    install -m 644 "$SRC/config/config.example.yaml" /etc/ssc/config.yaml
     echo "/etc/ssc/config.yaml を作成しました (サンプルのまま。編集してください)"
 fi
 install -d -m 700 /var/lib/ssc

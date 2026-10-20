@@ -34,8 +34,15 @@ CRON_FIELD = re.compile(r"^[\d*/,\-A-Za-z]+$")
 
 
 def load(path):
-    with open(path, encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except PermissionError:
+        sys.stderr.write(f"ssc: {path} を読む権限がありません "
+                         f"(sudo で実行するか、sudo chmod 644 {path} で読めるようにしてください)\n")
+    except yaml.YAMLError as e:
+        sys.stderr.write(f"ssc: {path} の YAML に誤りがあります:\n{e}\n")
+    sys.exit(2)
 
 
 def merge(base, over):
@@ -92,6 +99,8 @@ def validate(cfg):
         where = f"jobs.{name}"
         if not re.fullmatch(r"[A-Za-z0-9_-]+", str(name)):
             errors.append(f"{where}: ジョブ名は英数字・_・- のみ使えます")
+        if name == "all":
+            errors.append(f"{where}: all は ssc run all で使う予約語なのでジョブ名にできません")
         if not isinstance(job, dict):
             errors.append(f"{where}: mapping で指定してください")
             continue

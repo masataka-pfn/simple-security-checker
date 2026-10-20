@@ -65,6 +65,11 @@ run_job() {
     local check="${!check_var}"
     local notify_var="CFG_jobs_${key}_notify" title_var="CFG_jobs_${key}_title"
     local notify="${!notify_var:-calendar}"
+    # 本文に OK の行も載せるか。always (定期報告) は既定で載せ、何が正常だったかまで分かるようにする
+    local verbose_var="CFG_jobs_${key}_verbose" verbose_default=0
+    [[ "$notify" == always ]] && verbose_default=1
+    local quiet_opt=--quiet
+    [[ "${!verbose_var:-$verbose_default}" == 1 ]] && quiet_opt=""
     local default_title
     if [[ "$check" == external ]]; then default_title="$name"; else default_title=$(job_title "$check"); fi
     local title="${!title_var:-$default_title}"
@@ -87,7 +92,7 @@ run_job() {
     else
         local record=1
         [[ "$dry_run" == 1 ]] && record=0
-        output=$(SSC_RECORD_STATE=$record bash "${SSC_HOME}/checks/${check}.sh" --quiet ${SSC_CONFIG:+-c "$SSC_CONFIG"} 2>&1) || rc=$?
+        output=$(SSC_RECORD_STATE=$record bash "${SSC_HOME}/checks/${check}.sh" $quiet_opt ${SSC_CONFIG:+-c "$SSC_CONFIG"} 2>&1) || rc=$?
     fi
     output=$(sed 's/\x1b\[[0-9;]*m//g' <<< "$output")
 

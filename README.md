@@ -36,6 +36,7 @@ sudo ssc install-cron                # 設定の schedule から /etc/cron.d/ssc
 設定は `/etc/ssc/config.yaml` に書きます（`-c` か環境変数 `SSC_CONFIG` で別の場所も指定できます）。
 書かなかった項目には [`config/defaults.yaml`](config/defaults.yaml) の既定値が使われ、`ssc config dump` で最終的な値を確認できます。
 書き方の例は [`config/config.example.yaml`](config/config.example.yaml) を見てください。
+設定ファイルは一般ユーザーでもチェックを実行できるよう誰でも読める権限（644）で置くので、パスワードなどの秘密は書かないでください（メールの認証情報は `~/.msmtprc` に置きます）。
 
 ### ジョブと通知方式
 
@@ -63,6 +64,8 @@ jobs:
 | `change` | 前回と状態（OK / NG / FAIL）が変わったときだけ送る | `[要対応] … N件` / `[復旧] …` |
 | `always` | 毎回送る | `[要対応] … N件` / `[OK] …` |
 
+本文には要確認・要対応の行だけを載せます。`always` のジョブだけは、何が正常だったかまで分かるよう OK の行も載せます（ジョブごとに `verbose: true` / `false` で変えられます）。
+
 どの方式でも、チェックが途中で異常終了してまとめの行を出さなかった場合は `[実行失敗]` として必ず送ります。
 「メールが来ない」ことが「問題なし」と「点検自体が壊れている」のどちらか分からなくなるのを防ぐためです。
 同じ理由で、`change` の監視には毎朝 1 回の `always` を組み合わせるのがおすすめです。
@@ -81,8 +84,8 @@ msmtp は `~/.msmtprc` の持ち主と実行ユーザーが一致しないと送
 
 | コマンド | 説明 |
 | --- | --- |
-| `ssc check <チェック名> [--quiet]` | チェックを実行して表示する（メールは送らない） |
-| `ssc run <ジョブ名> [--force] [--dry-run]` | ジョブを実行し、通知方式に従って送る |
+| `ssc check <チェック名>\|all [--quiet]` | チェックを実行して表示する（メールは送らない）。`all` ですべてのチェック |
+| `ssc run <ジョブ名>\|all [--force] [--dry-run]` | ジョブを実行し、通知方式に従って送る。`all` で有効なジョブをすべて実行 |
 | `ssc list` | ジョブの一覧 |
 | `ssc init-baseline` | 攻撃点チェックの基準（ログインユーザー、authorized_keys、sudo、ufw）を今の状態で保存する。意図した変更を受け入れるときにも使う |
 | `ssc install-cron [--print]` | `/etc/cron.d/ssc` を生成する |

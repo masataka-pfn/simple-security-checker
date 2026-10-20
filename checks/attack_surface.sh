@@ -99,7 +99,9 @@ fi
 compare_baseline() {
     local item="$1" label="$2"
     local file="${BASELINE_DIR}/${item}"
-    if [[ -d "$BASELINE_DIR" && ! -r "$BASELINE_DIR" ]]; then
+    # state_dir は root 専用 (700) なので、一般ユーザーには基準の有無そのものが見えない。
+    # その場合は「基準がない」ではなく root が必要としてスキップする
+    if [[ -e "$STATE_DIR" && ( ! -x "$STATE_DIR" || ( -d "$BASELINE_DIR" && ! -r "$BASELINE_DIR" ) ) ]]; then
         need_root "${label} (基準との比較)"
         return
     fi

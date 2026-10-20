@@ -14,6 +14,7 @@ mail:
 #   schedule : "HH:MM" (毎日) か cron 形式 ("*/5 * * * *")。ssc install-cron で /etc/cron.d/ssc に反映する
 #   notify   : calendar (問題があれば即日、なければ週次) / change (状態が変わったときだけ) / always (毎回)
 #   title    : 件名に使う名前 (省略可)
+#   verbose  : true で本文に OK の行も載せる (既定は notify: always のときだけ true)
 #   enabled  : false にすると cron に登録しない
 jobs:
   security:
