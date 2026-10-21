@@ -159,6 +159,26 @@ msmtp は `~/.msmtprc` の持ち主と実行ユーザーが一致しないと送
 各チェックは結果を `[OK]` / `[情報]` / `[要確認]` / `[要対応]` の行で出し、最後に `要対応項目: N 件` か `問題なし — …` を出します。
 `ssc run` はこのまとめの行で件数を判定します。`external` のコマンドも同じ行を出すか、`ok_pattern` / `issues_pattern` で書式を指定してください。
 
+## 類似ツールとの比較
+
+ssc と同じ範囲を丸ごと扱うツールは少なく、分野ごとに定番のツールがあります。ssc はそれらを置き換えるものではなく、1 台のサーバーで「入口を増やさない」運用を軽く続けるための道具です。
+
+| 分野 | ssc の対応 | 代表的なツール | 違い |
+| --- | --- | --- | --- |
+| 統合型の HIDS | 4 つのチェック全体 | [Wazuh](https://wazuh.com/)、[OSSEC](https://www.ossec.net/) | ログ分析、ファイル改ざん検知、rootkit 検知、脆弱性検知、通知まで揃う。マネージャーとエージェントの構成で、複数台の運用向き。ssc は Bash と YAML だけで 1 台に閉じる |
+| 設定・堅牢化の監査 | `attack_surface` | [Lynis](https://cisofy.com/lynis/)、[OpenSCAP](https://www.open-scap.org/) | 多数の推奨設定と比べて改善点を挙げる。ssc は推奨値ではなく、自分のサーバーの「あるべき状態」（許可ポート、基準）からのずれを見る |
+| 脆弱性の評価 | `security_updates` | [Vuls](https://vuls.io/)、[Trivy](https://trivy.dev/)、debsecan | CVE の検出が中心で、対象も広い。ssc は未適用のセキュリティ更新だけを、CISA KEV（悪用実績）と FIRST EPSS（悪用確率）で優先度付けする |
+| 公開ファイルの露出 | `attack_surface` の URL チェック | [nuclei](https://github.com/projectdiscovery/nuclei)、nikto | 外部から多数のテンプレートで調べる。ssc はサーバー内から nginx の設定を読み、実際の server_name と location を対象にする |
+| IOC の照合 | `ioc` | [Loki](https://github.com/Neo23x0/Loki)、[MISP](https://www.misp-project.org/) | Loki はファイルを YARA と IOC で走査し、MISP は脅威情報の共有基盤。ssc はレポートの IOC（無害化表記のままでよい）をログと現在の接続に照合する |
+| 死活監視 | `web_services` | [Monit](https://mmonit.com/monit/)、Uptime Kuma | Monit は再起動などの自動対処もできる。ssc は公開 URL からバックエンド、systemd、Docker まで順に確認し、状態が変わったときと毎朝の定期報告で知らせる |
+| 日次のメール報告 | 通知全体 | logwatch、logcheck | ログの要約を送る。ssc はチェック結果を送り、まとめの行がなければ `[実行失敗]` として必ず送るので、「メールが来ない」を「問題なし」と取り違えない |
+
+ssc が扱わないもの（必要なら `external` として登録すると、同じ仕組みでメールを受け取れます）:
+
+- ファイル改ざん検知（システム全体）: [AIDE](https://aide.github.io/)、`debsums` / `dpkg -V`
+- rootkit の検知: rkhunter、chkrootkit
+- 攻撃の遮断: [CrowdSec](https://www.crowdsec.net/)、fail2ban
+
 ## ライセンス
 
 [MIT](LICENSE)
