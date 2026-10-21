@@ -38,6 +38,17 @@ to_cron() {
     fi
 }
 
+# root 以外で check / run を実行したときの警告 (標準エラー出力)。
+# root が必要な項目は [情報] で飛ばしたり、external のコマンドが権限不足で失敗したりするため、
+# 結果が実際より正常に (あるいは [実行失敗] に) 見える。長い出力で流れないよう最初と最後に出す。
+warn_not_root() {
+    [[ $EUID -eq 0 ]] && return 0
+    echo -e "${YELLOW}${BOLD}ssc: 警告: root 以外 (ユーザー $(id -un)) で実行しています。${RESET}" >&2
+    echo -e "${YELLOW}  root が必要な項目 (ufw、sshd、docker、root しか読めないログ、root 専用の external コマンドなど) は" >&2
+    echo -e "  飛ばされるか失敗するため、結果が実際と違って見えることがあります。正しく確認するには:${RESET}" >&2
+    echo -e "${YELLOW}    sudo ssc ${SSC_ORIG_ARGS}${RESET}" >&2
+}
+
 job_var() {
     local v="CFG_jobs_${1//[^A-Za-z0-9_]/_}_$2"
     echo "${!v:-${3:-}}"
@@ -114,6 +125,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     echo "$out"
 }
 
+SSC_ORIG_ARGS="$*"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -c|--config) export SSC_CONFIG="$2"; shift 2 ;;
@@ -123,6 +135,11 @@ while [[ $# -gt 0 ]]; do
 done
 [[ $# -eq 0 ]] && { usage; exit 1; }
 CMD="$1"; shift
+
+if [[ "$CMD" == check || "$CMD" == run ]] && [[ $EUID -ne 0 ]]; then
+    warn_not_root
+    trap 'echo >&2; warn_not_root' EXIT
+fi
 
 case "$CMD" in
     check)
@@ -135,7 +152,9 @@ case "$CMD" in
             echo "チェック名を指定してください: ${CHECK_NAMES[*]} all" >&2
             exit 1
         fi
-        exec bash "${SSC_HOME}/checks/${name}.sh" "$@" ;;
+        # exec にすると終了時の警告 (trap) が出なくなるので、子プロセスとして実行する
+        bash "${SSC_HOME}/checks/${name}.sh" "$@"
+        exit $? ;;
     run)
         name="${1:-}"; shift || true
         [[ -z "$name" ]] && { echo "ジョブ名を指定してください (ssc list で一覧)" >&2; exit 1; }

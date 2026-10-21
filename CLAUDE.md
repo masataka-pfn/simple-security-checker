@@ -21,7 +21,7 @@ ssc (simple-security-checker): Bash checks for Ubuntu/Debian servers, run as roo
 - **Summary line**: every check must end by printing `要対応項目: N 件` or a line starting with `問題なし`. `run_job` parses this; if neither appears (e.g. a check died under `set -e`), the run is reported as `[実行失敗]` and always mailed. External checks can override the patterns with `ok_pattern` / `issues_pattern`.
 - **Notify modes**: `calendar` (issues → mail now; otherwise only on `mail.weekly_day`), `change` (mail only when state OK/NG/FAIL differs from `state_dir/state/<job>`; state is only written after a successful send so failed sends retry), `always`. `verbose` defaults to true only for `always`, so heartbeat mails include OK lines.
 - **Checks exit 0** regardless of findings; non-zero only for usage/config errors.
-- **Root**: checks run as a normal user but skip root-only sections with `need_root`. `state_dir` is 700 root, so a non-root run must report "needs root", never "baseline missing".
+- **Root**: checks run as a normal user but skip root-only sections with `need_root`. `state_dir` is 700 root, so a non-root run must report "needs root", never "baseline missing". Because a non-root run can look cleaner than it is (or fail for root-only external commands), `bin/ssc` prints a warning with the `sudo ssc …` command to stderr at the start and end (EXIT trap) of `check`/`run` when `EUID != 0` — so single checks are run as a child, not `exec`, to keep the trap.
 - **`all`** is reserved (`ssc run all`, `ssc check all`) and rejected as a job name by validation.
 
 ## Key design decisions
