@@ -56,17 +56,17 @@ checks:
 
   web_services:
     public_urls:
-      - {label: app, url: "https://example.com/app/"}
+      - {label: app, url: "https://example.com/"}
     backends:
-      - {label: app (Next.js), url: "http://127.0.0.1:3000/"}
-      - {label: api (uvicorn), url: "http://127.0.0.1:8000/docs"}
+      - {label: app, url: "http://127.0.0.1:8080/health"}
+      - {label: worker-api, url: "http://127.0.0.1:9000/health"}
     ok_codes: [2xx, 3xx, 401, 403]
     # elasticsearch_url: http://127.0.0.1:9200
     systemd_services: [nginx.service]
     # timers:
-    #   - {timer: crawl.timer, service: crawl.service}
-    # docker_compose_projects: [myapp]
-    # docker_on_demand_patterns: ["*crawler*"]
+    #   - {timer: backup.timer, service: backup.service}
+    # docker_compose_projects: [app]
+    # docker_on_demand_patterns: ["*batch*"]
 
   ioc:
     files: [/etc/ssc/ioc.d/*.txt]

@@ -1,0 +1,48 @@
+$ sudo ssc check attack_surface
+
+=== 外部に開いているポート ===
+  [OK] tcp/22 (0.0.0.0, sshd)
+  [OK] tcp/22 ([::], sshd)
+  [OK] tcp/443 (0.0.0.0, nginx)
+  [OK] tcp/80 (0.0.0.0, nginx)
+  [OK] udp: 外部で待ち受けているポートなし
+
+=== SSH 設定 ===
+  [OK] PermitRootLogin no
+  [OK] PasswordAuthentication no
+
+=== Docker のポート公開 ===
+  [OK] 外部に公開しているコンテナなし (すべて 127.0.0.1 か非公開)
+
+=== ufw ルール ===
+  [OK] ufw: active
+  [OK] 既定ポリシー: incoming を拒否
+  [OK] ufw 許可ルール: 基準と一致 (6 件)
+
+=== nginx 設定の残骸 ===
+  [要対応] sites-enabled にバックアップらしきファイル: /etc/nginx/sites-enabled/app.bak.20260105 (nginx は sites-enabled/* をすべて読み込むため、古い設定が有効になり得ます。sites-enabled の外へ移動してください)
+  [要確認] server_name の重複: "example.com" on 0.0.0.0:443 (後から読まれた側の server ブロックは無視されています)
+
+=== 公開してはいけないファイル (URL) ===
+  [OK] https://example.com: 216 件すべて読めない
+  [OK] http://example.com: 216 件すべて読めない
+  [OK] https://www.example.com: 216 件すべて読めない
+  [OK] http://www.example.com: 216 件すべて読めない
+  [OK] https://192.0.2.10: 216 件すべて読めない
+  [OK] http://192.0.2.10: 216 件すべて読めない
+  [情報] 対象: ホスト 3 件 × http/https × パス先頭 9 種 × ファイル 24 種 (計 1296 リクエスト、UA: attack-surface-self-check)
+
+=== 公開してはいけないファイル (公開ディレクトリ) ===
+  [OK] root/alias の 4 箇所に危険なファイルなし
+
+=== アカウントと鍵 ===
+  [OK] UID 0 は root のみ
+  [OK] ログイン可能なアカウント: 基準と一致 (3 件)
+  [OK] パスワードが空のアカウントなし
+  [要対応] SSH 公開鍵 (authorized_keys): 追加 — ubuntu (authorized_keys): 256 SHA256:Xq3v...Zk8 laptop-2026 (ED25519)
+  [情報] SSH 公開鍵 (authorized_keys): 意図した変更なら sudo ssc init-baseline で基準を更新
+  [OK] sudo 権限: 基準と一致 (3 件)
+
+========================================
+  要対応項目: 3 件
+========================================

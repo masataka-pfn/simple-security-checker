@@ -1,0 +1,17 @@
+$ sudo ssc check ioc
+
+=== IOC の一覧 ===
+  [OK] IOC 27 件 (IP 24 / ドメイン 1 / パス 2)
+
+=== ログとの照合 ===
+  [要確認] /.claude/CLAUDE.md (2026-01-example-report.txt / 攻撃者のサーバーで公開されていたファイル): 新たに 2 行のリクエスト (成功応答なし)
+      例: access.log: 203.0.113.45 - - [04/Jan/2026:14:02:11 +0900] "GET /.claude/CLAUDE.md HTTP/1.1" 401 188 "-" "python-requests/2.34.2"
+  [情報] 198.51.100.23 (2026-01-example-advisory.txt / ケースA スキャン元): 41 行 — すべて既報
+  [情報] 対象: /var/log/nginx/access.log* /var/log/nginx/error.log* /var/log/auth.log* /var/log/syslog* /var/log/ufw.log* /var/log/kern.log*
+
+=== 現在の接続との照合 ===
+  [OK] IOC の IP との接続なし
+
+========================================
+  要対応項目: 1 件
+========================================

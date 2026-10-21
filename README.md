@@ -12,6 +12,8 @@
 
 自前のスクリプトも `external` として登録すれば、同じ仕組みで結果をメールで受け取れます。
 
+出力の例: [`security_updates`](examples/output/security_updates.txt) / [`attack_surface`](examples/output/attack_surface.txt) / [`web_services`](examples/output/web_services.txt) / [`ioc`](examples/output/ioc.txt) / [届くメール](examples/output/mail_security.txt)（[一覧と見方](examples/output/README.md)）
+
 ## 必要なもの
 
 - Ubuntu 22.04 / 24.04（Debian 系なら動く見込み）
@@ -158,6 +160,8 @@ msmtp は `~/.msmtprc` の持ち主と実行ユーザーが一致しないと送
 
 各チェックは結果を `[OK]` / `[情報]` / `[要確認]` / `[要対応]` の行で出し、最後に `要対応項目: N 件` か `問題なし — …` を出します。
 `ssc run` はこのまとめの行で件数を判定します。`external` のコマンドも同じ行を出すか、`ok_pattern` / `issues_pattern` で書式を指定してください。
+
+実際の出力とメールの例は [`examples/output/`](examples/output/README.md) にあります。
 
 ## 類似ツールとの比較
 

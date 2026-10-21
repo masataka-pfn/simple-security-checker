@@ -1,0 +1,68 @@
+# 注: 架空のパッケージと CVE を例示しています (パッケージ名・バージョン・CVE-2026-99901〜99903 は説明用で、実在のパッケージや脆弱性とは関係ありません)
+
+$ sudo ssc check security_updates
+
+=== システム基本情報 ===
+  OS      : Ubuntu 24.04.3 LTS
+  起動中  : 6.8.0-100-generic
+  日時    : 2026-01-05 03:00 JST
+  [OK] パッケージリスト: 0h 前に更新済み
+
+=== カーネル ===
+  [OK] 最新カーネルで起動中 (6.8.0-100-generic)
+  [OK] 古いカーネルイメージ: 1 個
+
+=== アップグレード可能パッケージ ===
+  [要対応] セキュリティアップデート 2 件が未適用
+    libexample3                            1.4.2-1ubuntu0.1                         -> 1.4.2-1ubuntu0.2
+    example-cli                            2.0.1-1ubuntu0.3                         -> 2.0.1-1ubuntu0.4
+  [情報] その他のアップデート 1 件 (セキュリティ以外、通常は自動適用待ちで問題なし)
+    example-data                           2026a-0ubuntu0.1                         -> 2026b-0ubuntu0.1
+  [OK] 保留パッケージなし
+
+=== アップデート重要度評価 (CISA KEV / FIRST EPSS) ===
+  [要対応] libexample3: CVE-2026-99901 — CISA KEV カタログに掲載 (悪用実績あり、最優先で対応)
+  [OK] libexample3: CVE-2026-99902 — EPSSスコア 0.00213 (悪用可能性は低)
+  [要確認] example-cli: CVE-2026-99903 — EPSSスコア 0.11870 (悪用可能性あり、対応推奨)
+
+=== セキュリティ回帰チェック ===
+  [OK] example-httpd (2.6.1-1ubuntu0.5): changelog 最新エントリに回帰なし
+  [OK] libexample3 (1.4.2-1ubuntu0.1): changelog 最新エントリに回帰なし
+  [OK] example-sshd (1:3.2p1-1ubuntu0.8): changelog 最新エントリに回帰なし
+
+=== サービス再起動チェック ===
+  [OK] 再起動が必要なサービスなし
+  [OK] needrestart: カーネルは最新 (再起動不要)
+  [OK] 再起動フラグなし (/var/run/reboot-required 不在)
+
+=== 自動更新 (unattended-upgrades) ===
+  [OK] unattended-upgrades: 動作中
+
+=== dpkg 整合性チェック ===
+  [OK] dpkg: 整合性に問題なし
+
+=== ファイアウォール (ufw) ===
+  [OK] ufw: Status: active
+
+=== systemd 失敗ユニット ===
+  [OK] systemd: 失敗ユニットなし
+
+=== SSL証明書 有効期限 ===
+  [OK] example.com: 証明書の有効期限まで残り 62 日
+
+=== ログイン失敗・不正アクセス試行 ===
+  [OK] 直近24時間のログイン失敗: 0 件
+  [OK] fail2ban: 動作中 (sshd 現在のBAN数: 3)
+
+=== ディスク使用状況 ===
+  [OK] /: 41% 使用中 (20G/49G, 空き 29G)
+
+  再起動: [更新は不要]
+
+========================================
+  要対応項目: 3 件
+
+  推奨コマンド:
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get autoremove --purge
+========================================

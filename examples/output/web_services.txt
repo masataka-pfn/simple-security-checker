@@ -1,0 +1,27 @@
+$ sudo ssc check web_services
+
+=== 公開URL疎通確認 ===
+  [OK] app: HTTP 200 (https://example.com/)
+  [OK] admin: HTTP 401 (https://example.com/admin/)
+
+=== バックエンド直接疎通確認 ===
+  [OK] app: HTTP 200 (http://127.0.0.1:8080/health)
+  [要対応] worker-api: 応答なし (http://127.0.0.1:9000/health)
+
+=== systemd サービス状態 ===
+  [OK] nginx.service: active
+  [OK] app.service: active
+  [要対応] worker-api.service: activating (クラッシュループの可能性。journalctl -u worker-api.service で確認)
+
+=== 定期実行 (systemd timer) ===
+  [OK] backup.timer: 稼働中
+  [OK] backup.service: 前回実行は成功
+
+=== Docker コンテナ状態 ===
+  [OK] app-db-1: Up 12 days (healthy)
+  [OK] app-cache-1: Up 12 days
+  [情報] app-batch-1: Exited (0) 2 days ago (オンデマンド実行コンテナ)
+
+========================================
+  要対応項目: 2 件
+========================================

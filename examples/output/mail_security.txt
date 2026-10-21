@@ -1,0 +1,56 @@
+# 注: 架空のパッケージと CVE を例示しています (パッケージ名・バージョン・CVE-2026-99901〜99903 は説明用で、実在のパッケージや脆弱性とは関係ありません)
+
+$ sudo ssc run security --dry-run
+----- 送信せずに表示 (--dry-run): [要対応] web-01.example.com セキュリティチェック: 3件 (2026-01-05 03:00) -----
+To: admin@example.com
+Subject: =?UTF-8?B?W+imgeWvvuW/nF0gd2ViLTAxLmV4YW1wbGUuY29tIOOCu+OCreODpeODquODhuOCo+ODgeOCp+ODg+OCrzogM+S7tiAoMjAyNi0wMS0wNSAwMzowMCk=?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+
+=== システム基本情報 ===
+  OS      : Ubuntu 24.04.3 LTS
+  起動中  : 6.8.0-100-generic
+  日時    : 2026-01-05 03:00 JST
+
+=== カーネル ===
+
+=== アップグレード可能パッケージ ===
+  [要対応] セキュリティアップデート 2 件が未適用
+    libexample3                            1.4.2-1ubuntu0.1                         -> 1.4.2-1ubuntu0.2
+    example-cli                            2.0.1-1ubuntu0.3                         -> 2.0.1-1ubuntu0.4
+
+=== アップデート重要度評価 (CISA KEV / FIRST EPSS) ===
+  [要対応] libexample3: CVE-2026-99901 — CISA KEV カタログに掲載 (悪用実績あり、最優先で対応)
+  [要確認] example-cli: CVE-2026-99903 — EPSSスコア 0.11870 (悪用可能性あり、対応推奨)
+
+=== セキュリティ回帰チェック ===
+
+=== サービス再起動チェック ===
+
+=== 自動更新 (unattended-upgrades) ===
+
+=== dpkg 整合性チェック ===
+
+=== ファイアウォール (ufw) ===
+
+=== systemd 失敗ユニット ===
+
+=== SSL証明書 有効期限 ===
+
+=== ログイン失敗・不正アクセス試行 ===
+  [OK] 直近24時間のログイン失敗: 0 件
+
+=== ディスク使用状況 ===
+  [OK] /: 41% 使用中 (20G/49G, 空き 29G)
+
+  再起動: [更新は不要]
+
+========================================
+  要対応項目: 3 件
+
+  推奨コマンド:
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get autoremove --purge
+========================================
